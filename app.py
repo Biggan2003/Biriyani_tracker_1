@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from streamlit_folium import st_folium
 import folium
@@ -8,15 +9,14 @@ from streamlit_js_eval import get_geolocation
 # ১. পেজ সেটআপ
 st.set_page_config(page_title="বিরিয়ানি দিবে?", page_icon="🍗", layout="wide")
 
-CSV_FILE = 'mosque_data.csv'
+###CSV_FILE = 'mosque_data.csv'
+# গুগল শিট কানেকশন তৈরি
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data():
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        if 'real' not in df.columns: df['real'] = 0
-        if 'fake' not in df.columns: df['fake'] = 0
-        return df
-    return pd.DataFrame(columns=['name', 'lat', 'lon', 'menu', 'type', 'district', 'real', 'fake'])
+    # সরাসরি গুগল শিট থেকে ডাটা রিড করবে
+    # ttl="0" মানে হলো কোনো ক্যাশ থাকবে না, প্রতিবার সরাসরি শিট থেকে একদম ফ্রেশ ডাটা আসবে
+    return conn.read( )
 
 df = load_data()
 
@@ -101,21 +101,23 @@ with tab1:
         with col1:
             if st.button(f"✅ আলহামদুলিল্লাহ, পেয়েছি  : {df.at[idx, 'real']}", use_container_width=True):
                 df.at[idx, 'real'] += 1
-                df.to_csv(CSV_FILE, index=False)
+                ###df.to_csv(CSV_FILE, index=False)
+                conn.update(data=df) # এটি আসল এবং ভুয়া ভোটের উভয় জায়গাতেই বসবে
                 # বাটনের ঠিক উপরে মেসেজটি দেখাবে
                 message_place.success("ইতিহাস আপনাকে মনে রাখবে! 😉")
                 import time
-                time.sleep(4) # ২ সেকেন্ড মেসেজটি দেখিয়ে তারপর পেজ রিলোড হবে
+                time.sleep(5) # ২ সেকেন্ড মেসেজটি দেখিয়ে তারপর পেজ রিলোড হবে
                 st.rerun()
             
         with col2:
             if st.button(f"❌ ভুয়া: {df.at[idx, 'fake']}", use_container_width=True):
                 df.at[idx, 'fake'] += 1
-                df.to_csv(CSV_FILE, index=False)
+                ###df.to_csv(CSV_FILE, index=False)
+                conn.update(data=df) # এটি আসল এবং ভুয়া ভোটের উভয় জায়গাতেই বসবে
                 # বাটনের ঠিক উপরে মেসেজটি দেখাবে
                 message_place.error("মানুষকে বাঁচানোর জন্য ধন্যবাদ! 🛑")
                 import time
-                time.sleep(3)
+                time.sleep(5)
                 st.rerun()
     else:
         #st.info("💡 কোনো একটি মসজিদের পিনে (Marker) ক্লিক করুন ভোট দেওয়ার জন্য!")
@@ -278,13 +280,15 @@ with tab2:
                     "type": food_type, "district": new_dist,
                     "real": 0, "fake": 0
                 }
-                pd.concat([load_data(), pd.DataFrame([new_entry])], ignore_index=True).to_csv(CSV_FILE, index=False)
+                ###pd.concat([load_data(), pd.DataFrame([new_entry])], ignore_index=True).to_csv(CSV_FILE, index=False)
+                updated_df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+                conn.update(data=updated_df)
                 st.balloons()
                 # এখন মেসেজটি বাটনের পাশেই (নিচে) দেখা যাবে
                 submit_message_place.success(f"মাশাআল্লাহ বিরিয়ানি বীর {helper_name}! ইতিহাস আপনাকে স্বর্ণাক্ষরে মনে রাখবে। 👑")
                 # একটু সময় দিন যাতে ইউজার মেসেজটা দেখতে পারে
                 import time
-                time.sleep(4)
+                time.sleep(5)
                 
                 #st.success(f"মাশাআল্লাহ বিরিয়ানি বীর {helper_name}! আপনার সওয়াব কনফার্ম! 😉")
                 st.rerun()
