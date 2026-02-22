@@ -89,97 +89,130 @@ with tab1:
 
 
 
-# --- TAB 2: ফ্লোটিং Mosjid এবং ক্লিক-বেসড সিলেকশন ---
+# --- TAB 2: ফানি মোড ও ফ্লোটিং টার্গেট (Fixed CSS) ---
 with tab2:
     st.markdown("### ➕ নতুন স্পট যোগ করুন")
-    st.write("🎯 স্ক্রিনের মাঝখানের চিহ্ন দেখে ম্যাপের সঠিক জায়গায় **ক্লিক করুন** পয়েন্টার সেট করতে।")
+    st.write("🎯 ম্যাপের মাঝখানের **'Mosjid'** চিহ্নের নিচে সঠিক জায়গাটি আনুন এবং সেখানে ক্লিক করুন।")
     
     # জিপিএস বাটন
     if st.button("📡 আমার এখনকার লোকেশন ধরো!", use_container_width=True):
         loc = get_geolocation()
         if loc:
-            st.session_state.lat, st.session_state.lon = loc['coords']['latitude'], loc['coords']['longitude']
+            st.session_state.lat = loc['coords']['latitude']
+            st.session_state.lon = loc['coords']['longitude']
             st.session_state.zoom = 15 
             st.rerun()
 
-    # ১. স্ক্রিনের মাঝখানে ভাসমান "Mosjid" চিহ্নের জন্য CSS
+    # ১. CSS: যা ফ্লোটিং টার্গেটকে ম্যাপের ভেতর আটকে রাখবে
     st.markdown("""
         <style>
-        .map-wrapper {
+        /* ম্যাপের কন্টেইনার সেটআপ */
+        [data-testid="stVerticalBlock"] > div:has(iframe) {
             position: relative;
-            width: 100%;
         }
-        .floating-label {
+        
+        /* ফ্লোটিং টার্গেট যা ম্যাপের ঠিক মাঝখানে ভাসবে */
+        .mosjid-crosshair {
             position: absolute;
-            top: 50%;
+            top: 10%;
             left: 50%;
-            transform: translate(-50%, -100%);
-            z-index: 999;
-            pointer-events: none; /* যাতে ম্যাপ ক্লিক করতে বাধা না দেয় */
+            transform: translate(-50%, -400%);
+            z-index: 9999;
+            pointer-events: none;
             text-align: center;
-            opacity: 0.6; /* ঝাপসা দেখানোর জন্য */
         }
-        .mosjid-text {
-            font-size: 14px;
+        .mosjid-label {
+            background: rgba(230, 57, 70, 0.9);
+            color: white;
             font-weight: bold;
-            color: #E63946;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 2px 5px;
-            border-radius: 5px;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # ২. ম্যাপ রেন্ডারিং কন্টেইনার
-    st.markdown('<div class="map-wrapper">', unsafe_allow_html=True)
-    
-    # ভাসমান চিহ্ন (সব সময় মাঝখানে থাকবে)
-    st.markdown('<div class="floating-label"><div style="font-size: 25px;">🎯</div><div class="mosjid-text">Mosjid</div></div>', unsafe_allow_html=True)
-
+    # ২. ম্যাপ রেন্ডারিং
+    # শুরুতে পয়েন্টার থাকবে কি না তা চেক করার জন্য একটি ফ্ল্যাগ ব্যবহার করছি
     m_input = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=st.session_state.zoom)
     
-    # ৩. আসল পয়েন্টার (যেখানে ইউজার ক্লিক করবে সেখানে থাকবে)
-    folium.Marker(
-        [st.session_state.lat, st.session_state.lon], 
-        icon=folium.Icon(color='red', icon='info-sign'),
-        tooltip="Selected Mosque Location"
-    ).add_to(m_input)
-    
-    # ম্যাপ ডিসপ্লে
-    map_input_data = st_folium(m_input, width="100%", height=400, key="mosque_picker_v3")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # সেশন স্টেটে যদি আগে ক্লিক করা হয়ে থাকে তবেই মার্কার দেখাবে
+    if 'has_clicked' in st.session_state and st.session_state.has_clicked:
+        folium.Marker(
+            [st.session_state.lat, st.session_state.lon], 
+            icon=folium.Icon(color='red', icon='info-sign')
+        ).add_to(m_input)
 
-    # ৪. ক্লিক করলে পয়েন্টার আপডেট করার লজিক
+    # ম্যাপ ডিসপ্লে
+    map_input_data = st_folium(m_input, width="100%", height=400, key="mosque_v_fixed")
+
+    # ফ্লোটিং এলিমেন্টটি ম্যাপের ওপরে ইনজেক্ট করা
+    st.markdown("""
+        <div class="mosjid-crosshair">
+            <div style="font-size: 25px;">🎯</div>
+            <div class="mosjid-label">Mosjid</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # ৩. ক্লিক লজিক: ক্লিক করলেই পয়েন্টার আসবে
     if map_input_data and map_input_data.get("last_clicked"):
-        clicked_lat = map_input_data["last_clicked"]["lat"]
-        clicked_lon = map_input_data["last_clicked"]["lng"]
+        new_lat = map_input_data["last_clicked"]["lat"]
+        new_lng = map_input_data["last_clicked"]["lng"]
         
-        # যদি ক্লিক করা জায়গা আগের থেকে আলাদা হয়, তবেই আপডেট হবে
-        if abs(clicked_lat - st.session_state.lat) > 0.00001 or abs(clicked_lon - st.session_state.lon) > 0.00001:
-            st.session_state.lat = clicked_lat
-            st.session_state.lon = clicked_lon
+        # প্রথমবার ক্লিক করলে বা লোকেশন পরিবর্তন করলে
+        if 'has_clicked' not in st.session_state or abs(new_lat - st.session_state.lat) > 0.0001:
+            st.session_state.lat = new_lat
+            st.session_state.lon = new_lng
+            st.session_state.has_clicked = True # এখন পয়েন্টার দেখাবে
             st.rerun()
 
-    # ৫. ডাটা এন্ট্রি ফর্ম
+    # ৪. ফানি ফর্ম সেকশন (আপনার অরিজিনাল ফরম্যাট + এক্সট্রা ফান)
     with st.form("mobile_add_form", clear_on_submit=True):
-        st.markdown(f"📍 **সিলেক্টেড লোকেশন:** `{st.session_state.lat:.5f}, {st.session_state.lon:.5f}`")
+        if st.session_state.get('has_clicked'):
+            st.markdown(f"📍 **নির্বাচিত লোকেশন:** `{st.session_state.lat:.5f}, {st.session_state.lon:.5f}`")
+        else:
+            st.warning("⚠️ ম্যাপের কোথাও ক্লিক করে আগে বিরিয়ানির জায়গাটি নিশ্চিত করুন!")
+            
+        new_name = st.text_input("🕌 মসজিদের নাম", placeholder="যেমন: বিরিয়ানি তকদির মসজিদ")
+        new_dist = st.text_input("📍 জেলা/মহল্লা", placeholder="যেমন: গুলশান, ঢাকা")
         
-        new_name = st.text_input("🕌 মসজিদের নাম")
-        new_dist = st.text_input("📍 জেলা/মহল্লা")
-        new_menu = st.selectbox("🍱 স্পেশাল মেনু", ["কাচ্চি বিরিয়ানি 🍗", "শাহী তেহারি 🍚", "খিচুড়ি 🥘", "অন্যান্য"])
-        helper_name = st.text_input("👑 আপনার নাম")
+        # আপনার হারানো স্পেশাল মেনু সেকশন
+        new_menu = st.selectbox("🍱 স্পেশাল মেনু কী দিচ্ছে?", [
+            "কাচ্চি বিরিয়ানি (একদম মাখন) 🍗", 
+            "শাহী তেহারি (পুরান ঢাকার আসল ঘ্রাণ) 🍚", 
+            "খিচুড়ি উৎসব (ডিমসহ মারাত্মক) 🥘", 
+            "অন্যান্য স্পেশাল আইটেম 🍲"
+        ])
+        
+        helper_name = st.text_input("👑 আপনার নাম (বিরিয়ানি বীর)")
+        
+        # আরও কিছু ফানি টেক্সট যোগ করা হলো
+        st.write("---")
+        funny_quotes = [
+            "আপনিই কি সেই আসল বিরিয়ানি খোর? 🍗",
+            "বিরিয়ানি বীরের তথ্য দিয়ে জাতিকে উদ্ধার করুন! 🌙",
+            "বিরিয়ানি না পাইলেও সওয়াব কিন্তু মিস নাই! 😉",
+            "আপনার দেওয়া তথ্যে হাজারো পেট শান্তি পাবে! 🚀"
+        ]
+        import random
+        st.info(random.choice(funny_quotes))
 
-        if st.form_submit_button("ম্যাপে যোগ করুন! 🚀", use_container_width=True):
-            if new_name and helper_name:
+        if st.form_submit_button("ম্যাপে যোগ করুন! 🚀 (জনকল্যাণে)"):
+            if new_name and helper_name and st.session_state.get('has_clicked'):
+                # ডাটা সেভ লজিক
                 new_entry = {
                     "name": new_name, "lat": st.session_state.lat, "lon": st.session_state.lon, 
-                    "menu": f"{new_menu} (তথ্যদাতা: {helper_name})", "type": "Biriyani", "district": new_dist,
+                    "menu": f"{new_menu} (তথ্যদাতা: {helper_name})", 
+                    "type": "Biriyani", "district": new_dist,
                     "real": 0, "fake": 0
                 }
                 pd.concat([load_data(), pd.DataFrame([new_entry])], ignore_index=True).to_csv(CSV_FILE, index=False)
                 st.balloons()
-                st.success("বিরিয়ানি বীর হিসেবে আপনার নাম নথিভুক্ত হলো! 😉")
+                st.success(f"মাশাআল্লাহ বিরিয়ানি বীর {helper_name}! আপনার সওয়াব কনফার্ম! 😉")
                 st.rerun()
+            else:
+                st.error("সবগুলো ঘর পূরণ করুন এবং ম্যাপে ক্লিক করুন! 🛑")
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
