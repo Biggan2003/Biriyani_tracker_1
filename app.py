@@ -38,11 +38,11 @@ st.markdown("""
         <span style='color: #E63946;'> ট্র্যাকার</span>
     </h3>
 """, unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-style: italic; color: white; font-size: 14px; text-shadow: 1px 1px 2px black;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয়!</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-style: ; color: white; font-size: 14px; text-shadow: 1px 1px 2px black;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয় </p>", unsafe_allow_html=True)
 #st.markdown("<p style='text-align: center; font-style: italic; color: #2D6A4F; font-size: 13px; margin-top: 0;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয়!</p>", unsafe_allow_html=True)
 #st.markdown("<p style='text-align: center; font-style: italic; color: #555;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয়! </p>", unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["🔍 বিরিয়ানি খুঁজুন", "➕ নতুন স্পট যোগ করুন"])
+tab1, tab2 = st.tabs(["🔍 বিরিয়ানি খুঁজুন", "➕ বিরিয়ানি স্পট যোগ করুন"])
 
 # --- TAB 1: বিরিয়ানি খোঁজা ---
 with tab1:
@@ -105,7 +105,7 @@ with tab1:
                 # বাটনের ঠিক উপরে মেসেজটি দেখাবে
                 message_place.success("ইতিহাস আপনাকে মনে রাখবে! 😉")
                 import time
-                time.sleep(3) # ২ সেকেন্ড মেসেজটি দেখিয়ে তারপর পেজ রিলোড হবে
+                time.sleep(4) # ২ সেকেন্ড মেসেজটি দেখিয়ে তারপর পেজ রিলোড হবে
                 st.rerun()
             
         with col2:
@@ -125,6 +125,26 @@ with tab1:
 
 # --- TAB 2: ফানি মোড ও ফ্লোটিং টার্গেট (Fixed CSS) ---
 with tab2:
+    # বাটন সেন্টারে নেওয়ার জন্য শক্তিশালী CSS
+    st.markdown("""
+        <style>
+        /* ফর্মের সাবমিট বাটনকে টার্গেট করা */
+        .stFormSubmitButton {
+            display: flex;
+            justify-content: center;
+        }
+    
+        .stFormSubmitButton > button {
+            width: 100% !important;
+            max-width: 300px !important;
+            background-color: #E63946 !important; /* বিরিয়ানি লাল রঙ */
+            color: white !important;
+            border-radius: 20px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    
     #st.markdown("### ➕ নতুন স্পট যোগ করুন")
     st.write(" ম্যাপের মাঝখানের **'🎯 Mosjid'** চিহ্নের নিচে সঠিক জায়গাটি আনুন এবং সেখানে ক্লিক করুন।")
     
@@ -212,12 +232,12 @@ with tab2:
         new_dist = st.text_input("📍 জেলা", placeholder="যেমন: ঢাকা")
         
         # আপনার হারানো স্পেশাল মেনু সেকশন
-        new_menu = st.selectbox("🥘 আইটেম সিলেক্ট করুন (যেমন: বিরিয়ানি/ ছোলা-মুড়ি", [
+        new_menu = st.selectbox("🥘 আইটেম সিলেক্ট করুন (যেমন: বিরিয়ানি/ ছোলা-মুড়ি)", [
             "বিরিয়ানি 🍗", 
             "শাহী তেহারি 🍚", 
             "খিচুড়ি ও মাংস 🥘", 
-            "ছোলা-মুড়ি ও ভাজাপোড়া 🍲",
-            "বুট-মুড়ি আর জিলাপি 🥨",
+            "ছোলা-মুড়ি আর জিলাপি 🥨",
+            "বুট-মুড়ি ও ভাজাপোড়া 🍲",
             "স্পেশাল ইফতার বক্স 🍱",
             
         ])
@@ -239,22 +259,37 @@ with tab2:
         ]
         import random
         st.info(random.choice(funny_quotes))
-
+        
+        
+        # বাটনের ঠিক নিচেই মেসেজ দেখানোর জন্য একটি খালি জায়গা রাখা
+        submit_message_place = st.empty()
         if st.form_submit_button("ম্যাপে যোগ করুন! 🚀 (জনকল্যাণে)"):
             if new_name and helper_name and st.session_state.get('has_clicked'):
                 # ডাটা সেভ লজিক
+                # যেহেতু আপনার সিলেক্ট বক্সে "বিরিয়ানি 🍗" বা "তেহারি 🍚" আছে, তাই এই নামগুলো দিয়ে চেক করছি
+                if "বিরিয়ানি" in new_menu or "তেহারি" in new_menu:
+                    food_type = "Biriyani"
+                else:
+                    food_type = "Iftar"
+                    
                 new_entry = {
                     "name": new_name, "lat": st.session_state.lat, "lon": st.session_state.lon, 
                     "menu": f"{new_menu} (তথ্যদাতা: {helper_name})", 
-                    "type": "Biriyani", "district": new_dist,
+                    "type": food_type, "district": new_dist,
                     "real": 0, "fake": 0
                 }
                 pd.concat([load_data(), pd.DataFrame([new_entry])], ignore_index=True).to_csv(CSV_FILE, index=False)
                 st.balloons()
-                st.success(f"মাশাআল্লাহ বিরিয়ানি বীর {helper_name}! আপনার সওয়াব কনফার্ম! 😉")
+                # এখন মেসেজটি বাটনের পাশেই (নিচে) দেখা যাবে
+                submit_message_place.success(f"মাশাআল্লাহ বিরিয়ানি বীর {helper_name}! ইতিহাস আপনাকে স্বর্ণাক্ষরে মনে রাখবে। 👑")
+                # একটু সময় দিন যাতে ইউজার মেসেজটা দেখতে পারে
+                import time
+                time.sleep(4)
+                
+                #st.success(f"মাশাআল্লাহ বিরিয়ানি বীর {helper_name}! আপনার সওয়াব কনফার্ম! 😉")
                 st.rerun()
             else:
-                st.error("সবগুলো ঘর পূরণ করুন এবং ম্যাপে ক্লিক করুন! 🛑")
+                submit_message_place.error("🛑 উঁহু! এভাবে অর্ধেক তথ্য দিলে বিরিয়ানি Lover রা আপনার ওপর রাগ করবে । সব পূরণ করুন আর ম্যাপে আসল স্পটটা সিলেক্ট করুন 🎯 ")
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
