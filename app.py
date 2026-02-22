@@ -16,8 +16,14 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 def load_data():
     # সরাসরি গুগল শিট থেকে ডাটা রিড করবে
     # ttl="0" মানে হলো কোনো ক্যাশ থাকবে না, প্রতিবার সরাসরি শিট থেকে একদম ফ্রেশ ডাটা আসবে
-    return conn.read( )
-
+    #return conn.read( ttl="0")
+    # সরাসরি গুগল শিট থেকে ডাটা রিড করবে
+    df = conn.read(ttl="0")
+    
+    # দশমিক (1.0, 0.0) দূর করে পূর্ণসংখ্যায় (1, 0) রূপান্তর
+    df['real'] = df['real'].fillna(0).astype(int)
+    df['fake'] = df['fake'].fillna(0).astype(int)
+    return df
 df = load_data()
 
 # ২. সেশন স্টেট (স্মুথ ট্র্যাকিং এবং বাংলাদেশ ভিউ নিশ্চিত করতে)
@@ -53,17 +59,30 @@ with tab1:
         # বিরিয়ানি হলে লেগ পিস, না হলে অন্য খাবারের ইমোজি
         food_emoji = "🍗" if row['type'] == "Biriyani" else "🍲"
         
+        # গুগল ম্যাপস লিঙ্ক তৈরি (row['lat'] এবং row['lon'] ব্যবহার করে)
+        google_map_url = f"https://www.google.com/maps/search/?api=1&query={row['lat']},{row['lon']}"
+        
         popup_html = f"""
         <div style="text-align: center; font-family: sans-serif; min-width: 150px;">
             <b style="font-size: 15px; color: #E63946;">{row['name']}</b><br>
             <span style="font-size: 12px; color: #555;">📍 {row['district']}</span><br>
-            <span style="font-size: 13px;">🍴 {row['menu']}</span><br>
+            <span style="font-size: 13px;">🥘 {row['menu']}</span><br>
+            
+            <div style="margin: 8px 0;">
+                <a href="{google_map_url}" target="_blank" 
+                    style="text-decoration: none; padding: 5px 10px; background: #4285F4; 
+                        color: white; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block;">
+                    📍 ম্যাপে দেখুন
+                </a>
+            </div>
+            
             <hr style="margin: 5px 0;">
             <div style="font-size: 12px; font-weight: bold;">
-                ✅ আসল: {row['real']} | ❌ ভুয়া: {row['fake']}
+                ✅ পেয়েছে: {row['real']} | ❌ ভুয়া: {row['fake']}
             </div>
         </div>
         """
+        
         
         # ডিফল্ট আইকনের বদলে ইমোজি আইকন ব্যবহার
         folium.Marker(
@@ -297,5 +316,3 @@ with tab2:
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
-
-
