@@ -38,7 +38,7 @@ st.markdown("""
         <span style='color: #E63946;'> ট্র্যাকার</span>
     </h3>
 """, unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-style: ; color: yello; font-size: 14px; text-shadow: 1px 1px 2px black;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয় </p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-style: ; color: yellow; font-size: 14px; text-shadow: 1px 1px 2px black;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয় </p>", unsafe_allow_html=True)
 #st.markdown("<p style='text-align: center; font-style: italic; color: #2D6A4F; font-size: 13px; margin-top: 0;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয়!</p>", unsafe_allow_html=True)
 #st.markdown("<p style='text-align: center; font-style: italic; color: #555;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয়! </p>", unsafe_allow_html=True)
 
@@ -297,4 +297,5 @@ with tab2:
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
+
 
