@@ -5,129 +5,124 @@ import folium
 import os
 from streamlit_js_eval import get_geolocation
 
-# ১. পেজ সেটআপ (টাইটেল এবং আইকন)
-st.set_page_config(page_title="বিরিয়ানি দিবে? | Biriyani Finder BD", page_icon="🍗", layout="wide")
+# ১. পেজ সেটআপ
+st.set_page_config(page_title="বিরিয়ানি দিবে?", page_icon="🍗", layout="wide")
 
 CSV_FILE = 'mosque_data.csv'
 
-# ২. ডেটা লোড করার ফাংশন
+# ২. ডেটা লোড/সেভ ফাংশন
 def load_data():
     if os.path.exists(CSV_FILE):
-        return pd.read_csv(CSV_FILE)
-    else:
-        # ফাইল না থাকলে নতুন কলামসহ তৈরি করবে
-        return pd.DataFrame(columns=['name', 'lat', 'lon', 'menu', 'type', 'district'])
+        df = pd.read_csv(CSV_FILE)
+        if 'real' not in df.columns: df['real'] = 0
+        if 'fake' not in df.columns: df['fake'] = 0
+        return df
+    return pd.DataFrame(columns=['name', 'lat', 'lon', 'menu', 'type', 'district', 'real', 'fake'])
 
-# ৩. ডেটা সেভ করার ফাংশন
 def save_data(new_row):
     df = load_data()
+    new_row['real'] = 0
+    new_row['fake'] = 0
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_csv(CSV_FILE, index=False)
 
-# ডেটা ইনিশিয়ালাইজ
 df = load_data()
 
-# ৪. মেইন হেডার
-st.markdown("<h1 style='text-align: center; color: #E63946;'>🍗 বিরিয়ানি দিবে?</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 1.2em;'>রমজানের সেরা 'বিরিয়ানি ট্র্যাকার' - খাবেন নিজেও, খাওয়াবেন অন্যকেও! 🌙</p>", unsafe_allow_html=True)
-st.divider()
+# ৩. ভোট প্রসেসিং (Query Params দিয়ে পপআপের ভেতর থেকে ভোট ধরা)
+params = st.query_params
+if "vote_idx" in params and "type" in params:
+    idx = int(params["vote_idx"])
+    v_type = params["type"]
+    
+    # ভোট আপডেট
+    df.at[idx, v_type] += 1
+    df.to_csv(CSV_FILE, index=False)
+    
+    # প্যারামিটার ক্লিয়ার করে পেজ রিফ্রেশ
+    st.query_params.clear()
+    st.toast("ভোট সফল হয়েছে! 🗳️")
+    st.rerun()
 
-
-# ৫. সাইডবার - নতুন স্পট অ্যাড করার ফানি ফর্ম
-st.sidebar.markdown("## ➕ নতুন বিরিয়ানি স্পট!")
-st.sidebar.info("উম্মাহকে ইফতার খুঁজে পেতে সাহায্য করুন! আপনার নাম ইতিহাসের পাতায় স্বর্ণাক্ষরে লেখা থাকবে। 😉")
-
-# সেশন স্টেটে লোকেশন স্টোর করা (ম্যাপ ক্লিক হ্যান্ডেল করার জন্য)
+# ৪. সেশন স্টেট
 if 'lat' not in st.session_state: st.session_state.lat = 23.8103
 if 'lon' not in st.session_state: st.session_state.lon = 90.4125
 
-# ১. জিপিএস বাটন
-if st.sidebar.button("🛰️ আমার বর্তমান লোকেশন নিন"):
-    loc = get_geolocation()
-    if loc:
-        st.session_state.lat = loc['coords']['latitude']
-        st.session_state.lon = loc['coords']['longitude']
-        st.toast("বুম! আপনার জিপিএস লোকেশন লক করা হয়েছে। 🎯")
-        st.rerun()
+st.markdown("<h2 style='text-align: center; color: #E63946; margin-bottom: 0;'>🍗 রমজানের সেরা বিরিয়ানি ট্র্যাকার 🌙</h2>", unsafe_allow_html=True)
 
-# ২. ফর্ম ইনপুট (ম্যাপের বাইরে থাকা ভ্যালুগুলো দেখাবে)
-with st.sidebar.form("add_info_form", clear_on_submit=True):
-    new_name = st.text_input("🕌 মসজিদের নাম", placeholder="যেমন: সোবহানবাগ জামে মসজিদ")
-    new_dist = st.text_input("📍 জেলা/মহল্লা", placeholder="যেমন: ধানমন্ডি, ঢাকা")
-    new_menu = st.selectbox("🍱 আজকের স্পেশাল মেনু কী?", 
-                            ["কাচ্চি বিরিয়ানি 🍗", "শাহী তেহারি 🍚", "খিচুড়ি উৎসব 🥘", "তেলে ভাজা ইফতার 🍛", "অন্যান্য"])
-    
-    st.write(f"নির্বাচিত লোকেশন: `{st.session_state.lat:.4f}, {st.session_state.lon:.4f}`")
-    st.caption("💡 মূল ম্যাপে যেকোনো জায়গায় ক্লিক করে লোকেশন পরিবর্তন করতে পারেন।")
-    
-    helper_name = st.text_input("👑 এই পুণ্য কাজের কারিগর কে?", placeholder="আপনার নাম")
-    
-    submit = st.form_submit_button("ব্যাস, এই স্পটটি ম্যাপে ঢুকিয়ে দিন! 🚀")
-    
-    if submit:
-        if new_name and helper_name:
-            new_type = "Biriyani" if any(x in new_menu for x in ["বিরিয়ানি", "তেহারি"]) else "Iftar"
-            new_entry = {
-                "name": new_name, "lat": st.session_state.lat, "lon": st.session_state.lon, 
-                "menu": f"{new_menu} (তথ্যদাতা: {helper_name})", "type": new_type, "district": new_dist
-            }
-            save_data(new_entry) 
-            st.balloons() 
-            st.success(f"অভিনন্দন {helper_name} ভাই! আপনি তো পুরাই 'বিরিয়ানি লিজেন্ড'! 🌟")
+tab1, tab2 = st.tabs(["🔍 বিরিয়ানি খুঁজুন", "➕ নতুন স্পট যোগ করুন"])
+
+# --- TAB 1: বিরিয়ানি খোঁজা (পপআপের ভেতর ভোট) ---
+with tab1:
+    m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=14)
+
+    for index, row in df.iterrows():
+        icon_color = "green" if row['type'] == "Biriyani" else "blue"
+        gmaps_url = f"https://www.google.com/maps?q={row['lat']},{row['lon']}"
+        
+        # ভোট দেওয়ার লিঙ্ক (পপআপের ভেতর কাজ করার জন্য)
+        real_link = f"/?vote_idx={index}&type=real"
+        fake_link = f"/?vote_idx={index}&type=fake"
+
+        # পপআপ ডিজাইন (আপনার স্ক্রিনশটের মতো কিন্তু বাটনসহ)
+        popup_html = f"""
+        <div style="text-align: center; font-family: sans-serif; min-width: 180px;">
+            <b style="font-size: 16px; color: #E63946;">{row['name']}</b><br>
+            <span style="font-size: 13px; color: #555;">📍 {row['district']}</span><br>
+            <span style="font-size: 13px;">🍴 {row['menu']}</span><br>
+            <hr style="margin: 8px 0;">
+            
+            <div style="margin-bottom: 10px;">
+                <a href="{real_link}" target="_self" style="text-decoration: none; padding: 4px 8px; background: #28a745; color: white; border-radius: 3px; font-size: 11px; margin-right: 5px;">✅ আসল: {row['real']}</a>
+                <a href="{fake_link}" target="_self" style="text-decoration: none; padding: 4px 8px; background: #dc3545; color: white; border-radius: 3px; font-size: 11px;">❌ ভুয়া: {row['fake']}</a>
+            </div>
+            
+            <a href="{gmaps_url}" target="_blank" style="display: block; padding: 6px; background: #1D3557; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: bold;">রাস্তা দেখাও 🗺️</a>
+        </div>
+        """
+        
+        folium.Marker(
+            [row['lat'], row['lon']],
+            popup=folium.Popup(popup_html, max_width=250),
+            icon=folium.Icon(color=icon_color, icon="cutlery", prefix='fa')
+        ).add_to(m)
+
+    st_folium(m, width="100%", height=500, key="discovery_map")
+
+# --- TAB 2: নতুন লোকেশন যোগ করা (আগের মতোই) ---
+with tab2:
+    st.markdown("### ➕ নতুন স্পট যোগ করুন")
+    if st.button("📡 আমার লোকেশন ধরো!", use_container_width=True):
+        loc = get_geolocation()
+        if loc:
+            st.session_state.lat = loc['coords']['latitude']
+            st.session_state.lon = loc['coords']['longitude']
             st.rerun()
-        else:
-            st.warning("সবগুলো ঘর পূরণ করুন! কিপটেমি করলে কিন্তু বিরিয়ানি ঠান্ডা হয়ে যাবে! 🛑")
 
-# ৬. মেইন ম্যাপ ডিসপ্লে (এটিই এখন ইনপুট হিসেবে কাজ করবে)
-st.subheader("📍 বর্তমানের বিরিয়ানি পয়েন্টগুলো (ম্যাপে ক্লিক করে নতুন লোকেশন সিলেক্ট করুন)")
-
-# ম্যাপ তৈরি
-m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=12)
-
-# ডাটাবেজে থাকা সব মার্কার যোগ করা
-for index, row in df.iterrows():
-    icon_color = "green" if row['type'] == "Biriyani" else "blue"
-    folium.Marker(
-        [row['lat'], row['lon']],
-        popup=row['name'],
-        icon=folium.Icon(color=icon_color, icon="cutlery", prefix='fa')
-    ).add_to(m)
-
-# ইউজারের বর্তমানে সিলেক্ট করা লাল পিন (📍 Indicator)
-folium.Marker(
-    [st.session_state.lat, st.session_state.lon],
-    tooltip="নতুন স্পট এখানে?",
-    icon=folium.Icon(color='red', icon='info-sign')
-).add_to(m)
-
-# ম্যাপ রেন্ডার করা
-map_data = st_folium(m, width="100%", height=550, key="main_map")
-
-# ম্যাপে যেকোনো জায়গায় ক্লিক করলে সেশন স্টেট আপডেট হবে
-if map_data.get("last_clicked"):
-    clicked_lat = map_data["last_clicked"]["lat"]
-    clicked_lng = map_data["last_clicked"]["lng"]
+    m_input = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=15)
+    folium.Marker([st.session_state.lat, st.session_state.lon], icon=folium.Icon(color='red')).add_to(m_input)
+    map_input_data = st_folium(m_input, width="100%", height=250, key="input_map")
     
-    if clicked_lat != st.session_state.lat:
-        st.session_state.lat = clicked_lat
-        st.session_state.lon = clicked_lng
+    if map_input_data.get("last_clicked"):
+        st.session_state.lat = map_input_data["last_clicked"]["lat"]
+        st.session_state.lon = map_input_data["last_clicked"]["lng"]
         st.rerun()
+
+    with st.form("mobile_add_form", clear_on_submit=True):
+        new_name = st.text_input("🕌 মসজিদের নাম")
+        new_dist = st.text_input("📍 জেলা/মহল্লা")
+        new_menu = st.selectbox("🍱 স্পেশাল মেনু কী?", ["কাচ্চি বিরিয়ানি 🍗", "শাহী তেহারি 🍚", "খিচুড়ি উৎসব 🥘", "তেলে ভাজা ইফতার 🍛", "অন্যান্য"])
+        helper_name = st.text_input("👑 আপনার নাম")
         
-        
-# ৭. ডেটা টেবিল এবং ফুটনোট
+        if st.form_submit_button("ম্যাপে যোগ করুন! 🚀", use_container_width=True):
+            if new_name and helper_name:
+                new_type = "Biriyani" if any(x in new_menu for x in ["বিরিয়ানি", "তেহারি"]) else "Iftar"
+                new_entry = {
+                    "name": new_name, "lat": st.session_state.lat, "lon": st.session_state.lon, 
+                    "menu": f"{new_menu} (তথ্যদাতা: {helper_name})", "type": new_type, "district": new_dist
+                }
+                save_data(new_entry)
+                st.balloons()
+                st.rerun()
+
 st.write("---")
-col_info, col_table = st.columns([1, 1])
-
-with col_info:
-    st.markdown("### 💡 কিছু কথা")
-    st.write("- ম্যাপের পিনে ক্লিক করলে গুগল ম্যাপের লিঙ্ক পাবেন।")
-    st.write("- কোনো তথ্য ভুল হলে বা বিরিয়ানি না দিলে আমাদের মাফ করে দিয়েন! 🙏")
-    st.write("- বেশি বেশি শেয়ার করুন যাতে কেউ অভুক্ত না থাকে।")
-
-with col_table:
-    if st.checkbox("📋 সব লোকেশনের লিস্ট দেখুন"):
-        st.dataframe(df[['name', 'district', 'menu']], use_container_width=True)
-
-# ফুটারে আপনার নাম এবং ফেসবুক লিঙ্ক (বড় সাইজ এবং ইন্টারেক্টিভ)
-st.write("---")
-st.markdown("<p style='text-align: center; color: gray; font-size: 18px;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
