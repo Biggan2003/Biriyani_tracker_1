@@ -29,7 +29,18 @@ if 'zoom' not in st.session_state: st.session_state.zoom = 7
 if 'map_key' not in st.session_state: st.session_state.map_key = 0 # ডাইনামিক ম্যাপ রিফ্রেশার
 
 # ৩. মেইন হেডার
-st.markdown("<h2 style='text-align: center; color: #E63946; margin-bottom: 0;'>🍗 রমজানের সেরা বিরিয়ানি ট্র্যাকার 🌙</h2>", unsafe_allow_html=True)
+#st.markdown("<h3 style='text-align: center; color: #E63946; margin-bottom: 0; font-size: 20px;'>🌙 রমজানের সেরা  বিরিয়ানি 🍗 ট্র্যাকার</h2>", unsafe_allow_html=True)
+# (বিরিয়ানি শব্দে সোনালী রঙ সহ)
+st.markdown("""
+    <h3 style='text-align: center; margin-bottom: 0; font-size: 20px; font-family: "SolaimanLipi", sans-serif;'>
+        <span style='color: #E63946;'>🍗  রমজানের সেরা  </span>
+        <span style='color: #FFD700; text-shadow: 1px 1px #000;'>বিরিয়ানি</span>
+        <span style='color: #E63946;'> ট্র্যাকার</span>
+    </h3>
+""", unsafe_allow_html=True)
+
+st.markdown("<p style='text-align: center; font-style: italic; color: #555; font-size: 13px; margin-top: 0;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয়!</p>", unsafe_allow_html=True)
+#st.markdown("<p style='text-align: center; font-style: italic; color: #555;'>আপনার মহল্লার বিরিয়ানি 🥘 এখন আপনার হাতের মুঠোয়! </p>", unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["🔍 বিরিয়ানি খুঁজুন", "➕ নতুন স্পট যোগ করুন"])
 
@@ -39,7 +50,9 @@ with tab1:
     m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=st.session_state.zoom)
 
     for index, row in df.iterrows():
-        icon_color = "green" if row['type'] == "Biriyani" else "blue"
+        # বিরিয়ানি হলে লেগ পিস, না হলে অন্য খাবারের ইমোজি
+        food_emoji = "🍗" if row['type'] == "Biriyani" else "🍲"
+        
         popup_html = f"""
         <div style="text-align: center; font-family: sans-serif; min-width: 150px;">
             <b style="font-size: 15px; color: #E63946;">{row['name']}</b><br>
@@ -52,11 +65,19 @@ with tab1:
         </div>
         """
         
+        # ডিফল্ট আইকনের বদলে ইমোজি আইকন ব্যবহার
         folium.Marker(
             [row['lat'], row['lon']],
             popup=folium.Popup(popup_html, max_width=180),
             tooltip=row['name'],
-            icon=folium.Icon(color=icon_color, icon="cutlery", prefix='fa')
+            icon=folium.DivIcon(
+                html=f"""<div style="font-size: 24px; background: white; border-radius: 50%; 
+                         width: 35px; height: 35px; display: flex; justify-content: center; 
+                         align-items: center; border: 2px solid #E63946; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);">
+                         {food_emoji}
+                         </div>""",
+                icon_anchor=(17, 17) # আইকনটি ঠিক লোকেশনের ওপর বসানোর জন্য
+            )
         ).add_to(m)
 
     map_data = st_folium(m, width="100%", height=450, key="discovery_map")
