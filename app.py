@@ -79,7 +79,7 @@ with tab1:
 
 
     
-    st.subheader("📍 বিরিয়ানি ম্যাপ")
+    #st.subheader("📍 বিরিয়ানি ম্যাপ")
     m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=st.session_state.zoom)
 
     for index, row in df.iterrows():
@@ -343,5 +343,6 @@ with tab2:
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
+
 
 
