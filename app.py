@@ -170,7 +170,7 @@ with tab1:
                     # ৩. সেশন স্টেট লক করা (যাতে রিলোড হলেও এই মসজিদেই থাকে)
                     st.session_state.lat = df.at[idx, 'lat']
                     st.session_state.lon = df.at[idx, 'lon']
-                    st.session_state.zoom = 10
+                    st.session_state.zoom = 13
                     st.session_state.selected_mosque = df.at[idx, 'name']
 
                     import time
@@ -194,7 +194,7 @@ with tab1:
                     # ৩. পজিশন লক
                     st.session_state.lat = df.at[idx, 'lat']
                     st.session_state.lon = df.at[idx, 'lon']
-                    st.session_state.zoom = 10
+                    st.session_state.zoom = 13
                     st.session_state.selected_mosque = df.at[idx, 'name']
 
                     import time
@@ -380,3 +380,4 @@ with tab2:
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
+
