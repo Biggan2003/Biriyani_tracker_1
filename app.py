@@ -52,6 +52,33 @@ tab1, tab2 = st.tabs(["🔍 বিরিয়ানি খুঁজুন", "�
 
 # --- TAB 1: বিরিয়ানি খোঁজা ---
 with tab1:
+
+    #mosjid search bar
+    col_title, col_search = st.columns([1, 1])
+    
+    with col_title:
+        st.subheader("📍 বিরিয়ানি ম্যাপ")
+    
+    with col_search:
+        # এখানে selectbox ব্যবহার করলে এটি টাইপ করে সার্চ করার সুবিধা দেয়
+        # আমরা শুরুতে একটি খালি অপশন রাখছি যাতে অ্যাপ লোড হতেই কোনো মসজিদ সিলেক্ট না হয়ে যায়
+        mosque_list = [""] + df['name'].tolist()
+        search_query = st.selectbox("🔍 মসজিদের নাম লিখে খুঁজুন", options=mosque_list, index=0, label_visibility="collapsed")
+
+    # যদি ইউজার কোনো নাম সিলেক্ট করে (খালি না থাকে)
+    if search_query != "":
+        final_selection = df[df['name'] == search_query].iloc[0]
+
+        # সেশন স্টেট আপডেট ও অটো-রিলোড
+        if st.session_state.selected_mosque != final_selection['name']:
+            st.session_state.lat = final_selection['lat']
+            st.session_state.lon = final_selection['lon']
+            st.session_state.zoom = 13
+            st.session_state.selected_mosque = final_selection['name']
+            st.rerun()
+
+
+    
     st.subheader("📍 বিরিয়ানি ম্যাপ")
     m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=st.session_state.zoom)
 
@@ -316,4 +343,5 @@ with tab2:
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
+
 
