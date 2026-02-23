@@ -18,7 +18,7 @@ def load_data():
     # ttl="0" মানে হলো কোনো ক্যাশ থাকবে না, প্রতিবার সরাসরি শিট থেকে একদম ফ্রেশ ডাটা আসবে
     #return conn.read( ttl="0")
     # সরাসরি গুগল শিট থেকে ডাটা রিড করবে
-    df = conn.read(ttl="0")
+    df = conn.read()
     
     # দশমিক (1.0, 0.0) দূর করে পূর্ণসংখ্যায় (1, 0) রূপান্তর
     df['real'] = df['real'].fillna(0).astype(int)
@@ -316,3 +316,4 @@ with tab2:
 
 st.write("---")
 st.markdown(f"<p style='text-align: center; font-size: 16px; color: gray;'>Made by <a href='https://www.facebook.com/md.biggan.1' target='_blank' style='color: #E63946; text-decoration: none;'>G. M Biggan</a></p>", unsafe_allow_html=True)
+
