@@ -5,3 +5,5 @@ Ramadam best Biriyani Tracker Bangladesh
 The application is publicly accessible via the following link:
 🔗 https://ramadan-biriyanitracker-biggan.streamlit.app/
 
+version 1 is running now
+
