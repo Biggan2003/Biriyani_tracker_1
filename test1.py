@@ -7,6 +7,7 @@ import os
 from streamlit_js_eval import get_geolocation
 
 # ১. পেজ সেটআপ
+# page setup
 st.set_page_config(page_title="বিরিয়ানি দিবে?", page_icon="🍗", layout="wide")
 
 CSV_FILE = 'mosque_data.csv'
